@@ -1,5 +1,4 @@
-﻿using ScottPlot;
-using ScottPlot.Plottable;
+﻿using ScottPlot.Plottable;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -39,10 +38,6 @@ namespace sv_binpeek
 
             item = new() { Header = "Zoom to Fit Data" };
             item.Click += (o, e) => { MainPlot.Plot.AxisAuto(); MainPlot.Refresh(); };
-            cm.Items.Add(item);
-
-            item = new() { Header = "Spectrogram" };
-            item.Click += (o, e) => new ScottPlot.WpfPlotViewer(MainPlot.Plot).Show();
             cm.Items.Add(item);
 
             cm.Items.Add(new Separator());
@@ -127,7 +122,7 @@ namespace sv_binpeek
 
                         MainPlot.Plot.AddSignal(data[i], nSamplingRate);
                     }
-                    
+
                     // Plots list
                     spPlots = MainPlot.Plot.GetPlottables();
 

@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="ScottPlot" Version="4.1.64" />
     <PackageReference Include="ScottPlot.WPF" Version="4.1.64" />
+    <PackageReference Include="Spectrogram" Version="1.6.1" />
   </ItemGroup>
 
 </Project>
