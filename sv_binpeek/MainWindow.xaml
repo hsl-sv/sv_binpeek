@@ -18,11 +18,47 @@
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="TextBoxPath" Margin="62,5,5,5" Text="..." TextWrapping="Wrap" VerticalContentAlignment="Center" IsEnabled="False" />
-            <Button Content="Browse" HorizontalAlignment="Left" Margin="10,10,0,10" Width="47" Click="Button_Click"/>
+            <TextBox x:Name="TextBoxPath" Grid.Column="0" Margin="62,5,5,5" Text="..." TextWrapping="Wrap" VerticalContentAlignment="Center" IsEnabled="False" />
+            <Button Content="Browse" Grid.Column="0" HorizontalAlignment="Left" Margin="5" Width="47" Click="Button_Click"/>
+
+            <TextBox x:Name="TextBoxChannels" Grid.Column="1" Text="4" FontSize="20" Margin="5" InputScope="Number" VerticalContentAlignment="Center"/>
+            <!-- TextBox Hint -->
+            <TextBlock Grid.Column="1" Margin="5" IsHitTestVisible="False" FontSize="20" Text="# of Channels" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=TextBoxChannels}" Value="">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBox x:Name="TextBoxSamplingRate" Grid.Column="2" Text="2048" FontSize="20" Margin="5" InputScope="Number" VerticalContentAlignment="Center"/>
+            <!-- TextBox Hint -->
+            <TextBlock Grid.Column="2" Margin="5" IsHitTestVisible="False" FontSize="20" Text="Sampling Rate" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=TextBoxSamplingRate}" Value="">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </Grid>
-        <Grid Grid.Row="1" Margin="5">
-            <ScottPlot:WpfPlot x:Name="MainPlot" MouseMove="MainPlot_MouseMove"/>
+        <Grid x:Name="PlotGrid" Grid.Row="1" Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="64"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            
+            <ScottPlot:WpfPlot x:Name="MainPlot" Grid.Column="1" MouseMove="MainPlot_MouseMove"/>
+            <Label x:Name="PlotXYLabel" Grid.Column="1" Content="" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="50" Background="#11000000" Panel.ZIndex="99"/>
         </Grid>
     </Grid>
 </Window>
