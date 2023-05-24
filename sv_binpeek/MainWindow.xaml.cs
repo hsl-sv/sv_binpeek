@@ -57,16 +57,13 @@ namespace sv_binpeek
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             // Remove stackPanel
-            StackPanel? stackPanel = FindName("stackPanel") as StackPanel;
-
-            if (stackPanel != null) { PlotGrid.Children.Remove(stackPanel); }
+            if (FindName("stackPanel") is StackPanel stackPanel) { PlotGrid.Children.Remove(stackPanel); }
 
             MainPlot.Plot.Clear();
             MainPlot.Refresh();
 
             byte[]? fileContent = null;
-            var filePath = string.Empty;
-            bool succeeded = false;
+            bool succeeded;
 
             // Try parse parameters
             succeeded = int.TryParse(TextBoxChannels.Text, out nChannels);
@@ -85,7 +82,7 @@ namespace sv_binpeek
                 TextBoxSamplingRate.Text = 2048.ToString();
             }
 
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            using (OpenFileDialog openFileDialog = new())
             {
                 openFileDialog.InitialDirectory = "C:\\";
                 openFileDialog.Filter = "SVT Binary Data files (*.bin)|*.bin";
@@ -94,7 +91,7 @@ namespace sv_binpeek
 
                 if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    filePath = openFileDialog.FileName;
+                    string? filePath = openFileDialog.FileName;
 
                     TextBoxPath.Text = filePath;
 
@@ -189,10 +186,12 @@ namespace sv_binpeek
 
             for (int i = 0; i < data.Count; i++)
             {
-                CheckBox cb = new();
-                cb.Name = $"ch{i}";
-                cb.Content = $"Ch {i}";
-                cb.IsChecked = true;
+                CheckBox cb = new()
+                {
+                    Name = $"ch{i}",
+                    Content = $"Ch {i}",
+                    IsChecked = true
+                };
                 cb.Click += CheckboxClick;
                 stackPanel.Children.Add(cb);
             }
@@ -205,12 +204,9 @@ namespace sv_binpeek
 
         private void CheckboxClick(object sender, RoutedEventArgs e)
         {
-            var cb = sender as CheckBox;
-
-            if (cb != null && spPlots != null)
+            if (sender is CheckBox cb && spPlots != null)
             {
-                int idx = 0;
-                _ = int.TryParse(cb.Name.Split("ch")[1], out idx);
+                _ = int.TryParse(cb.Name.Split("ch")[1], out int idx);
 
                 if (cb.IsChecked == true)
                     spPlots[idx].IsVisible = true;
