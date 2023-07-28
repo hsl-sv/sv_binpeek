@@ -1,7 +1,10 @@
 ﻿using ScottPlot.Plottable;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -17,6 +20,8 @@ namespace sv_binpeek
     {
         public int nChannels = 4;
         public int nSamplingRate = 2048;
+        public string strCSSType = "t4";
+        public string chEndian = "l";
         public IPlottable[]? spPlots;
 
         public MainWindow()
@@ -62,6 +67,8 @@ namespace sv_binpeek
             MainPlot.Plot.Clear();
             MainPlot.Refresh();
 
+            GC.Collect();
+
             byte[]? fileContent = null;
             bool succeeded;
 
@@ -82,10 +89,17 @@ namespace sv_binpeek
                 TextBoxSamplingRate.Text = 2048.ToString();
             }
 
+            strCSSType = TextBoxCSSType.Text.Substring(0, 2);
+
+            System.Type targetType = typeof(float);
+
+            // CSS 타입 확인
+            VerifyType(strCSSType, ref targetType, ref chEndian);
+
             using (OpenFileDialog openFileDialog = new())
             {
                 openFileDialog.InitialDirectory = "C:\\";
-                openFileDialog.Filter = "SVT Binary Data files (*.bin)|*.bin";
+                openFileDialog.Filter = "SVT Binary Data files|*.*";
                 openFileDialog.FilterIndex = 1;
                 openFileDialog.RestoreDirectory = true;
 
@@ -103,17 +117,28 @@ namespace sv_binpeek
             {
                 try
                 {
+                    if (chEndian == "b")
+                    {
+                        Array.Reverse(fileContent);
+                    }
 
-                    var restoredData = Converter(fileContent);
+                    // byte[] to float[]
+                    var restoredData = Converter(fileContent, targetType);
 
                     var data = new List<float[]>(nChannels);
 
+                    // 그림 그리기
                     for (int i = 0; i < nChannels; i++)
                     {
                         float[] ch = new float[restoredData.GetUpperBound(0) + 1];
 
                         for (int j = 0; j <= restoredData.GetUpperBound(0); j++)
                             ch[j] = restoredData[j, i];
+
+                        if (chEndian == "b")
+                        {
+                            Array.Reverse(ch);
+                        }
 
                         data.Add(ch);
 
@@ -145,17 +170,42 @@ namespace sv_binpeek
             }
         }
 
-        private float[,] Converter(byte[] bytes)
+        // CSS 타입 체크
+        private static void VerifyType(string type, ref System.Type targetType, ref string endian)
         {
-            var floatArray = new float[(bytes.Length / nChannels)];
+            if (new[] { "t8", "p8" }.Contains(type))
+            { endian = "l"; targetType = typeof(double); }
+            else if (new[] { "t4", "p4" }.Contains(type))
+            { endian = "l"; targetType = typeof(float); }
+            else if (new[] { "s4" }.Contains(type))
+            { endian = "b"; targetType = typeof(int); }
+            else if (new[] { "i4" }.Contains(type))
+            { endian = "l"; targetType = typeof(int); }
+            else
+            { endian = "l"; targetType = typeof(float); }
+            return;
+        }
 
-            Buffer.BlockCopy(bytes, 0, floatArray, 0, bytes.Length);
+        // type 기반으로 오브젝트 어레이 생성, 최종 결과는 float 어레이로 반환
+        private float[,] Converter(byte[] bytes, System.Type type)
+        {
+            // 타입에 맞춰 읽기
+            Array objArray = Array.CreateInstance(type, bytes.Length / nChannels);
+            float[] floatArray = new float[objArray.Length];
 
-            var restoredArray = Make2DArray(floatArray, (bytes.Length / sizeof(float)) / nChannels, nChannels);
+            // byte[] to object array
+            Buffer.BlockCopy(bytes, 0, objArray, 0, bytes.Length);
+
+            // float 배열로 Array.Copy()
+            Array.Copy(objArray, floatArray, objArray.Length);
+
+            // 채널 수에 따라 Reshape
+            var restoredArray = Make2DArray(floatArray, (bytes.Length / Marshal.SizeOf(type)) / nChannels, nChannels);
 
             return restoredArray;
         }
 
+        // 1차원 어레이 -> 2차원 [h x w] 어레이
         private static T[,] Make2DArray<T>(T[] input, int height, int width)
         {
             T[,] output = new T[height, width];
@@ -206,12 +256,19 @@ namespace sv_binpeek
         {
             if (sender is CheckBox cb && spPlots != null)
             {
-                _ = int.TryParse(cb.Name.Split("ch")[1], out int idx);
+                try
+                {
+                    _ = int.TryParse(cb.Name.Split("ch")[1], out int idx);
 
-                if (cb.IsChecked == true)
-                    spPlots[idx].IsVisible = true;
-                else
-                    spPlots[idx].IsVisible = false;
+                    if (cb.IsChecked == true)
+                        spPlots[idx].IsVisible = true;
+                    else
+                        spPlots[idx].IsVisible = false;
+                }
+                catch
+                {
+                    cb.IsChecked = false;
+                }
 
                 MainPlot.Refresh();
             }

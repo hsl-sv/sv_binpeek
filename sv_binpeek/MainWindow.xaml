@@ -17,13 +17,29 @@
                 <ColumnDefinition Width="4*"/>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
             <TextBox x:Name="TextBoxPath" Grid.Column="0" Margin="62,5,5,5" Text="..." TextWrapping="Wrap" VerticalContentAlignment="Center" IsEnabled="False" />
             <Button Content="Browse" Grid.Column="0" HorizontalAlignment="Left" Margin="5" Width="47" Click="Button_Click"/>
 
-            <TextBox x:Name="TextBoxChannels" Grid.Column="1" Text="4" FontSize="20" Margin="5" InputScope="Number" VerticalContentAlignment="Center"/>
+            <TextBox x:Name="TextBoxCSSType" Grid.Column="1" Text="t4" FontSize="20" Margin="5" VerticalContentAlignment="Center"/>
             <!-- TextBox Hint -->
-            <TextBlock Grid.Column="1" Margin="5" IsHitTestVisible="False" FontSize="20" Text="# of Channels" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
+            <TextBlock Grid.Column="1" Margin="5" IsHitTestVisible="False" FontSize="20" Text="CSS 3.0 Type" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=TextBoxCSSType}" Value="">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBox x:Name="TextBoxChannels" Grid.Column="2" Text="4" FontSize="20" Margin="5" InputScope="Number" VerticalContentAlignment="Center"/>
+            <!-- TextBox Hint -->
+            <TextBlock Grid.Column="2" Margin="5" IsHitTestVisible="False" FontSize="20" Text="# of Channels" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -36,9 +52,9 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <TextBox x:Name="TextBoxSamplingRate" Grid.Column="2" Text="2048" FontSize="20" Margin="5" InputScope="Number" VerticalContentAlignment="Center"/>
+            <TextBox x:Name="TextBoxSamplingRate" Grid.Column="3" Text="2048" FontSize="20" Margin="5" InputScope="Number" VerticalContentAlignment="Center"/>
             <!-- TextBox Hint -->
-            <TextBlock Grid.Column="2" Margin="5" IsHitTestVisible="False" FontSize="20" Text="Sampling Rate" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
+            <TextBlock Grid.Column="3" Margin="5" IsHitTestVisible="False" FontSize="20" Text="Sampling Rate" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="DarkGray">
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">
                         <Setter Property="Visibility" Value="Collapsed"/>
