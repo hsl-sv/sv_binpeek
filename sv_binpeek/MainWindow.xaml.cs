@@ -24,6 +24,8 @@ namespace sv_binpeek
         public string chEndian = "l";
         public IPlottable[]? spPlots;
 
+        static private uint fileChunkSize = 104857600;
+
         public MainWindow()
         {
             RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
@@ -69,7 +71,7 @@ namespace sv_binpeek
 
             GC.Collect();
 
-            byte[]? fileContent = null;
+            byte[] fileContent;
             bool succeeded;
 
             // Try parse parameters
@@ -96,77 +98,91 @@ namespace sv_binpeek
             // CSS 타입 확인
             VerifyType(strCSSType, ref targetType, ref chEndian);
 
-            using (OpenFileDialog openFileDialog = new())
+            OpenFileDialog openFileDialog = new();
+            openFileDialog.InitialDirectory = "C:\\";
+            openFileDialog.Filter = "SVT Binary Data files|*.*";
+            openFileDialog.FilterIndex = 1;
+            openFileDialog.RestoreDirectory = true;
+
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                openFileDialog.InitialDirectory = "C:\\";
-                openFileDialog.Filter = "SVT Binary Data files|*.*";
-                openFileDialog.FilterIndex = 1;
-                openFileDialog.RestoreDirectory = true;
+                string? filePath = openFileDialog.FileName;
 
-                if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                TextBoxPath.Text = filePath;
+
+                // TODO: 2GB 이상 바이트 할당 (Array 사용인듯)
+                long fileLength = new System.IO.FileInfo(filePath).Length;
+                fileContent = new byte[fileLength];
+                byte[] buf = new byte[fileChunkSize];
+                int bytesRead = 0;
+                int fcOffset = 0;
+
+                using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
-                    string? filePath = openFileDialog.FileName;
-
-                    TextBoxPath.Text = filePath;
-
-                    fileContent = File.ReadAllBytes(filePath);
-                }
-            }
-
-            if (fileContent != null)
-            {
-                try
-                {
-                    if (chEndian == "b")
+                    while ((bytesRead = fs.Read(buf, 0, buf.Length)) > 0)
                     {
-                        Array.Reverse(fileContent);
+                        Buffer.BlockCopy(buf, 0, fileContent, fcOffset, bytesRead);
+                        fcOffset += bytesRead;
                     }
+                }
 
-                    // byte[] to float[]
-                    var restoredData = Converter(fileContent, targetType);
+                //fileContent = File.ReadAllBytes(filePath);
 
-                    var data = new List<float[]>(nChannels);
-
-                    // 그림 그리기
-                    for (int i = 0; i < nChannels; i++)
+                if (fileContent.Length > 0)
+                {
+                    try
                     {
-                        float[] ch = new float[restoredData.GetUpperBound(0) + 1];
-
-                        for (int j = 0; j <= restoredData.GetUpperBound(0); j++)
-                            ch[j] = restoredData[j, i];
-
                         if (chEndian == "b")
                         {
-                            Array.Reverse(ch);
+                            Array.Reverse(fileContent);
                         }
 
-                        data.Add(ch);
+                        // byte[] to float[]
+                        var restoredData = Converter(fileContent, targetType);
 
-                        MainPlot.Plot.AddSignal(data[i], nSamplingRate);
+                        var data = new List<float[]>(nChannels);
+
+                        // 그림 그리기
+                        for (int i = 0; i < nChannels; i++)
+                        {
+                            float[] ch = new float[restoredData.GetUpperBound(0) + 1];
+
+                            for (int j = 0; j <= restoredData.GetUpperBound(0); j++)
+                                ch[j] = restoredData[j, i];
+
+                            if (chEndian == "b")
+                            {
+                                Array.Reverse(ch);
+                            }
+
+                            data.Add(ch);
+
+                            MainPlot.Plot.AddSignal(data[i], nSamplingRate);
+                        }
+
+                        // Plots list
+                        spPlots = MainPlot.Plot.GetPlottables();
+
+                        MakeCheckbox(data);
+
+                        MainPlot.Plot.Benchmark();
+                        MainPlot.Plot.XLabel("Seconds");
+                        MainPlot.Render();
                     }
+                    catch (Exception ex)
+                    {
+                        System.Windows.Forms.MessageBox.Show(ex.Message, "Error during opening file");
 
-                    // Plots list
-                    spPlots = MainPlot.Plot.GetPlottables();
+                        MainPlot.Plot.Clear();
+                        MainPlot.Refresh();
 
-                    MakeCheckbox(data);
-
-                    MainPlot.Plot.Benchmark();
-                    MainPlot.Plot.XLabel("Seconds");
-                    MainPlot.Render();
+                        return;
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    System.Windows.Forms.MessageBox.Show(ex.Message, "Error during opening file");
-
-                    MainPlot.Plot.Clear();
-                    MainPlot.Refresh();
-
                     return;
                 }
-            }
-            else
-            {
-                return;
             }
         }
 
